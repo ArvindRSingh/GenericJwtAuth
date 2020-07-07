@@ -1,4 +1,4 @@
-# JWT Authentication and Authorization independent of database
+# ASP.NET Core JWT Authentication and Authorization independent of database
 * Generates Json Web Tokens(JWT) authentication tokens and uses it to authenticate and authorize users regardless of underlying database used. Default ASP.NET API template uses Entity Framework and is tightly coupled with it.
 * Use Azure Table Storage or can be made to use any other storage mechanism as primary database for storing users and roles.
  
