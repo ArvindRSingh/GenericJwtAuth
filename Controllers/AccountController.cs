@@ -95,7 +95,8 @@ namespace GenericJwtAuth.Controllers
                         Name = "someName",
                     };
                     var token = GenerateToken(user);
-                    return Ok(token);
+                    var response = ComposeTokenResponse(token, user);
+                    return Ok(response);
                 }
                 else
                 {
@@ -106,6 +107,18 @@ namespace GenericJwtAuth.Controllers
             {
                 throw;
             }
+        }
+
+        private Dictionary<string,string> ComposeTokenResponse(string token, AzureTableUser user)
+        {
+            var dict = new Dictionary<string, string>();
+            dict.Add("token", token);
+            dict.Add("UserName", user.UserName);
+            dict.Add("email", user.Email);
+            dict.Add("expires_in", JwtTokenConfigurations.ExpiresInMinutes.Ticks.ToString());
+            dict.Add(".expires", JwtTokenConfigurations.ExpiresInMinutes.ToString());
+
+            return dict;
         }
 
         private static string GenerateToken(AzureTableUser userModel)
@@ -137,8 +150,6 @@ namespace GenericJwtAuth.Controllers
                 Subject = claimsIdentity,
                 Expires = JwtTokenConfigurations.ExpiresInMinutes,
                 NotBefore = JwtTokenConfigurations.NotBefore,
-
-
             });
 
             return securityTokenHandler.WriteToken(securityToken);
