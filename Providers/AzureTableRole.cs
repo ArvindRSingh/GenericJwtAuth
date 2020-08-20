@@ -8,7 +8,7 @@ using UltraMapper;
 
 namespace GenericJwtAuth.Providers
 {
-    public class AzureTableRole : ITableEntity
+    public class AzureTableRole : TableEntity
     {
         public AzureTableRole()
         {
@@ -25,24 +25,14 @@ namespace GenericJwtAuth.Providers
         public string ETag { get; set; }
         public string NormalizedName { get; internal set; }
 
-        public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+        public override void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-            if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
-            if (operationContext == null) { throw new ArgumentNullException(nameof(operationContext)); }
-
-            AzureTableRole customEntity = TableEntity.ConvertBack<AzureTableRole>(properties, operationContext);
-            // Do the memberwise clone for this object from the returned CustomEntity object
-            mapper.Map(this, customEntity);
+            base.ReadEntity(properties, operationContext);
         }
 
-        public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
+        public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            IDictionary<string, EntityProperty> flattenedProperties = TableEntity.Flatten(this, operationContext);
-            //flattenedProperties.Remove("PartitionKey");
-            //flattenedProperties.Remove("RowKey");
-            //flattenedProperties.Remove("Timestamp");
-            //flattenedProperties.Remove("ETag");
-            return flattenedProperties;
+            return base.WriteEntity(operationContext);
         }
     }
 }

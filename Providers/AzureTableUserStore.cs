@@ -89,7 +89,10 @@ namespace GenericJwtAuth.Providers
             try
             {
                 IQueryable<TUser> query = CloudTable.CreateQuery<TUser>()
-                 .Where(x => x.PartitionKey == "Users" && x.NormalizedEmail == normalizedEmail);
+                 .Where(x =>
+                 x.PartitionKey == "Users"
+                 &&
+                 x.NormalizedEmail == normalizedEmail);
                 fetchedUser = await query.FirstAsync(cancellationToken);
             }
             catch (Exception ex)
@@ -119,7 +122,10 @@ namespace GenericJwtAuth.Providers
             try
             {
                 IQueryable<TUser> query = CloudTable.CreateQuery<TUser>()
-                            .Where(x => x.PartitionKey == "Users" && x.RowKey == normalizedUserName);
+                            .Where(x =>
+                            x.PartitionKey == "Users"
+                            &&
+                            x.RowKey == normalizedUserName);
                 fetchedUser = await query.FirstAsync(cancellationToken);
             }
             catch (Exception ex)

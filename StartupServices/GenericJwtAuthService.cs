@@ -33,6 +33,7 @@ namespace GenericJwtAuth.StartupServices
                     ValidateIssuer = true,
                     ValidIssuer = JwtTokenConfigurations.Issuer,
                     ClockSkew = TimeSpan.FromMinutes(0),
+                    CryptoProviderFactory = CryptoProviderFactory.Default
                 };
             });
 

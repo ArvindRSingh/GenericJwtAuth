@@ -8,7 +8,7 @@ using UltraMapper;
 
 namespace GenericJwtAuth.Providers
 {
-    public class AzureTableUser : ITableEntity
+    public class AzureTableUser : TableEntity
     {
         public const string partitionKey = "Users";
         private readonly Mapper mapper;
@@ -16,45 +16,43 @@ namespace GenericJwtAuth.Providers
         {
             mapper = new UltraMapper.Mapper(UltramapperConfiguration.Get());
         }
-        public virtual Guid Id { get; set; } = Guid.NewGuid();
-        public virtual string UserName { get; set; }
-        public virtual string Email { get; set; }
-        public virtual bool EmailConfirmed { get; set; }
-        public virtual String PasswordHash { get; set; }
-        public string NormalizedUserName { get; internal set; }
+        public Guid Id { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+        public bool EmailConfirmed { get; set; }
+        public string PasswordHash { get; set; }
+        private string _normalizedUserName;
+        public string NormalizedUserName
+        {
+            get => _normalizedUserName == null ? NormalizedEmail : _normalizedUserName;
+            set { this._normalizedUserName = value; }
+        }
         public string AuthenticationType { get; set; }
         public bool IsAuthenticated { get; set; }
         public string Name { get; set; }
 
-        public string PartitionKey { get => partitionKey; }
-        public string RowKey { get => this.NormalizedUserName; }
+        public string PartitionKey { get => partitionKey; set { } }
+        public string RowKey { get => this.NormalizedUserName; set { this.NormalizedUserName = value; } }
         public DateTimeOffset Timestamp { get; set; }
         public string ETag { get; set; }
-        public string NormalizedEmail { get; internal set; }
+        private string _normalizedEmail;
+        public string NormalizedEmail
+        {
+            get => this._normalizedEmail == null ? this.Email == null ? this.UserName : this.Email.ToLower() : this._normalizedEmail;
+            set { this._normalizedEmail = this.Email = this.UserName = value; }
+        }
         public bool PhoneNumberConfirmed { get; internal set; }
         public bool TwoFactorEnabled { get; internal set; }
         public string PhoneNumber { get; internal set; }
-        string ITableEntity.PartitionKey { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        string ITableEntity.RowKey { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+        public override void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
-            if (properties == null) { throw new ArgumentNullException(nameof(properties)); }
-            if (operationContext == null) { throw new ArgumentNullException(nameof(operationContext)); }
-
-            AzureTableUser customEntity = TableEntity.ConvertBack<AzureTableUser>(properties, operationContext);
-            // Do the memberwise clone for this object from the returned CustomEntity object
-            mapper.Map(this, customEntity);
+            base.ReadEntity(properties, operationContext);
         }
 
-        public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
+
+        public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            IDictionary<string, EntityProperty> flattenedProperties = TableEntity.Flatten(this, operationContext);
-            //flattenedProperties.Remove("PartitionKey");
-            //flattenedProperties.Remove("RowKey");
-            //flattenedProperties.Remove("Timestamp");
-            //flattenedProperties.Remove("ETag");
-            return flattenedProperties;
+            return base.WriteEntity(operationContext);
         }
     }
 }

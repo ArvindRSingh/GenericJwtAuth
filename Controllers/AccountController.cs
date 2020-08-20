@@ -5,12 +5,16 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using GenericJwtAuth.CryptoService;
+using GenericJwtAuth.DTO;
 using GenericJwtAuth.Providers;
 using GenericJwtAuth.StartupServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,9 +24,52 @@ namespace GenericJwtAuth.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private IAzureTableRepo azureTableRepo;
+        private Nivra.AzureOperations.Utility utility;
+        private CloudTable authCloudTable;
+
+        public AccountController(IAzureTableRepo azureTableRepo, Nivra.AzureOperations.Utility utility)
+        {
+            if (azureTableRepo == null) { throw new ArgumentNullException(nameof(azureTableRepo)); }
+            if (utility == null) { throw new ArgumentNullException(nameof(utility)); }
+
+            this.azureTableRepo = azureTableRepo;
+            this.utility = utility;
+            authCloudTable = this.azureTableRepo.Collection["Auth"];
+        }
+
+        [HttpPost("Register")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RegisterAsync(RegisterDto registrationModel, CancellationToken cancellationToken)
+        {
+            if (registrationModel == null) { throw new ArgumentNullException(nameof(registrationModel)); }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var existingUser = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.partitionKey, registrationModel.Email);
+
+            if (existingUser != null)
+            {
+                return BadRequest($"User already exists with email {registrationModel.Email}");
+            }
+
+            AzureTableUser userToInsert = new AzureTableUser()
+            {
+                Email = registrationModel.Email,
+                UserName = registrationModel.Email,
+                PasswordHash = registrationModel.Password.ToMd5()
+            };
+            await utility.InsertOrMergeEntityAsync<AzureTableUser>(userToInsert);
+            return Ok();
+
+        }
+
         [HttpPost("Login")]
         [AllowAnonymous]
-        public IActionResult Login(UserModel userModel)
+        public async Task<IActionResult> LoginAsync(LoginDto userModel)
         {
             if (userModel == null)
             {
@@ -31,7 +78,12 @@ namespace GenericJwtAuth.Controllers
             try
             {
                 /* write your logic to compare username and password to that in the database */
-                bool loginSuccess = true;
+                bool loginSuccess = false;
+                var userFromDb = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.partitionKey, userModel.UserName);
+
+                loginSuccess = string.Equals(userModel.UserName, userFromDb.NormalizedUserName, StringComparison.InvariantCultureIgnoreCase)
+                                && userModel.Password.ToMd5() == userFromDb.PasswordHash;
+
                 if (loginSuccess)
                 {
 

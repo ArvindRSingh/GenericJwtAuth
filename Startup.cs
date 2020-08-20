@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,10 @@ namespace GenericJwtAuth
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            AzureTableRepo azureTableRepo = new AzureTableRepo();
+            Nivra.AzureOperations.Utility utility = new Nivra.AzureOperations.Utility(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
+
             //Configuring CORS
             services.AddCors(config =>
             {
@@ -39,9 +44,31 @@ namespace GenericJwtAuth
                 });
             });
 
+
+   //         // Configuring PasswordHasher
+			//services.Configure<PasswordHasherOptions>(options =>
+			//{
+
+			//	options.HashAlgorithm = PasswordHasherAlgorithms.SHA1;
+			//	options.SaltSize = 16;
+			//	options.IterationCount = 8192;
+			//});
+
+			//// Registering PasswordHasher
+			//services.AddPasswordHasher();
+
             JwtTokenConfigurations.Load(Configuration);
 
             services.AddGenericJwtAuthService();
+
+            var tables = services.InitializeAzureTables(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
+            foreach (var table in tables)
+            {
+                azureTableRepo.Collection.Add(table.Name, table);
+            }
+
+            services.AddSingleton<IAzureTableRepo>(azureTableRepo);
+            services.AddSingleton<Nivra.AzureOperations.Utility>(utility);
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>

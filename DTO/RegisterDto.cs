@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace GenericJwtAuth.Controllers
+namespace GenericJwtAuth.DTO
 {
-    public class UserModel
+    public class RegisterDto
     {
         [Required]
-        public string UserName { get; set; }
+        [EmailAddress]
+        public string Email { get; set; }
+
         [Required]
         public string Password { get; set; }
     }
