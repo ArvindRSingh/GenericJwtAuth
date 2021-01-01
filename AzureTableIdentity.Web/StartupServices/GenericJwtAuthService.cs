@@ -3,16 +3,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GenericJwtAuth.StartupServices
 {
     public static class GenericJwtAuthService
     {
-        public static void AddGenericJwtAuthService(this IServiceCollection services) 
+        public static void AddGenericJwtAuthService(this IServiceCollection services)
         {
             //Add authentication before adding MVC
             services.AddAuthentication(sharedOptions =>

@@ -1,23 +1,31 @@
-﻿using GenericJwtAuth.Config;
-using Microsoft.Azure.Cosmos.Table;
+﻿using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Globalization;
 using UltraMapper;
 
-namespace GenericJwtAuth.Providers
+namespace AzureTableIdentity
 {
     public class AzureTableUser : TableEntity
     {
-        public const string partitionKey = "Users";
+        public const string PARTITIONKEY = "Users";
         private readonly Mapper mapper;
         public AzureTableUser()
         {
+            base.PartitionKey = PARTITIONKEY;
             mapper = new UltraMapper.Mapper(UltramapperConfiguration.Get());
         }
         public Guid Id { get; set; }
-        public string UserName { get; set; }
+        private string _username;
+        public string UserName
+        {
+            get { return _username; }
+            set
+            {
+                _username = value;
+                this.NormalizedUserName = _username;
+            }
+        }
         public string Email { get; set; }
         public bool EmailConfirmed { get; set; }
         public string PasswordHash { get; set; }
@@ -25,14 +33,24 @@ namespace GenericJwtAuth.Providers
         public string NormalizedUserName
         {
             get => _normalizedUserName == null ? NormalizedEmail : _normalizedUserName;
-            set { this._normalizedUserName = value; }
+            set
+            {
+                this._normalizedUserName = value?.ToLowerInvariant();
+                this.RowKey = _normalizedUserName;
+            }
         }
         public string AuthenticationType { get; set; }
         public bool IsAuthenticated { get; set; }
         public string Name { get; set; }
 
-        public string PartitionKey { get => partitionKey; set { } }
-        public string RowKey { get => this.NormalizedUserName; set { this.NormalizedUserName = value; } }
+        public new string RowKey
+        {
+            get => base.RowKey;
+            set
+            {
+                base.RowKey = value;
+            }
+        }
         public DateTimeOffset Timestamp { get; set; }
         public string ETag { get; set; }
         private string _normalizedEmail;

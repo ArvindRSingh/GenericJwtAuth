@@ -1,14 +1,12 @@
-﻿using GenericJwtAuth.Providers;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GenericJwtAuth.Providers
+namespace AzureTableIdentity
 {
     public class AzureTableRoleStore<TRole> : IRoleStore<TRole>
         where TRole : AzureTableRole, new()

@@ -1,25 +1,22 @@
-﻿using GenericJwtAuth.Config;
-using Microsoft.Azure.Cosmos.Table;
+﻿using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UltraMapper;
 
-namespace GenericJwtAuth.Providers
+namespace AzureTableIdentity
 {
     public class AzureTableRole : TableEntity
     {
         public AzureTableRole()
         {
+            base.PartitionKey = "Roles";
             mapper = new UltraMapper.Mapper(UltramapperConfiguration.Get());
         }
-        public const string partitionKey = "Roles";
         private readonly Mapper mapper;
 
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
-        public string PartitionKey { get => partitionKey; set => throw new NotImplementedException(); }
+        public string PartitionKey { get => base.PartitionKey; set => throw new NotImplementedException(); }
         public string RowKey { get; set; }
         public DateTimeOffset Timestamp { get; set; }
         public string ETag { get; set; }

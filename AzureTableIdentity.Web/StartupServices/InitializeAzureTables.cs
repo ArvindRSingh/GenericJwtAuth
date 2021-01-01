@@ -1,19 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Azure.Cosmos.Table;
+﻿using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GenericJwtAuth.StartupServices
 {
     public static class AzureTables
     {
-        public static IEnumerable<CloudTable> InitializeAzureTables(this IServiceCollection services, string connectionString, params string[] tableNames)
+        public static IEnumerable<CloudTable> InitializeAzureTables(string connectionString, params string[] tableNames)
         {
             // Retrieve storage account information from connection string.
             CloudStorageAccount storageAccount;

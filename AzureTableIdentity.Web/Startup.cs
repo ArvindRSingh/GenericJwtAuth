@@ -1,19 +1,11 @@
 ﻿using GenericJwtAuth.StartupServices;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace GenericJwtAuth
 {
@@ -45,23 +37,24 @@ namespace GenericJwtAuth
             });
 
 
-   //         // Configuring PasswordHasher
-			//services.Configure<PasswordHasherOptions>(options =>
-			//{
+            //         // Configuring PasswordHasher
+            //services.Configure<PasswordHasherOptions>(options =>
+            //{
 
-			//	options.HashAlgorithm = PasswordHasherAlgorithms.SHA1;
-			//	options.SaltSize = 16;
-			//	options.IterationCount = 8192;
-			//});
+            //	options.HashAlgorithm = PasswordHasherAlgorithms.SHA1;
+            //	options.SaltSize = 16;
+            //	options.IterationCount = 8192;
+            //});
 
-			//// Registering PasswordHasher
-			//services.AddPasswordHasher();
+            //// Registering PasswordHasher
+            //services.AddPasswordHasher();
 
+            //services.AddIdentity<AzureTableUser, AzureTableRole>();
             JwtTokenConfigurations.Load(Configuration);
 
             services.AddGenericJwtAuthService();
 
-            var tables = services.InitializeAzureTables(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
+            var tables = AzureTables.InitializeAzureTables(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
             foreach (var table in tables)
             {
                 azureTableRepo.Collection.Add(table.Name, table);
@@ -120,11 +113,10 @@ namespace GenericJwtAuth
             {
                 app.UseSpaStaticFiles();
             }
-
-            app.UseRouting();
-
             app.UseAuthentication();
+            app.UseRouting();
             app.UseAuthorization();
+
 
             app.UseEndpoints(endpoints =>
             {

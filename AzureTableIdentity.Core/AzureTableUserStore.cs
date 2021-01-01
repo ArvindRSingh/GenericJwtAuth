@@ -1,15 +1,13 @@
-﻿using GenericJwtAuth.Providers;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace GenericJwtAuth.Providers
+namespace AzureTableIdentity
 {
     public class AzureTableUserStore<TUser> :
         IUserStore<TUser>, IUserPasswordStore<TUser>, IUserEmailStore<TUser>, IUserPhoneNumberStore<TUser>,
@@ -126,7 +124,8 @@ namespace GenericJwtAuth.Providers
                             x.PartitionKey == "Users"
                             &&
                             x.RowKey == normalizedUserName);
-                fetchedUser = await query.FirstAsync(cancellationToken);
+                fetchedUser = await query.FirstOrDefaultAsync();
+                //fetchedUser = query.FirstOrDefault();
             }
             catch (Exception ex)
             {

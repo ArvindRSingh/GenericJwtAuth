@@ -1,22 +1,21 @@
-﻿using System;
+﻿using AzureTableIdentity;
+using GenericJwtAuth.CryptoService;
+using GenericJwtAuth.DTO;
+using GenericJwtAuth.StartupServices;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos.Table;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GenericJwtAuth.CryptoService;
-using GenericJwtAuth.DTO;
-using GenericJwtAuth.Providers;
-using GenericJwtAuth.StartupServices;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos.Table;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace GenericJwtAuth.Controllers
 {
@@ -24,23 +23,28 @@ namespace GenericJwtAuth.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private readonly UserManager<AzureTableUser> _userManager;
         private IAzureTableRepo azureTableRepo;
         private Nivra.AzureOperations.Utility utility;
         private CloudTable authCloudTable;
 
-        public AccountController(IAzureTableRepo azureTableRepo, Nivra.AzureOperations.Utility utility)
+        public AccountController(
+            IAzureTableRepo azureTableRepo
+            , Nivra.AzureOperations.Utility utility
+            , UserManager<AzureTableUser> userManager)
         {
             if (azureTableRepo == null) { throw new ArgumentNullException(nameof(azureTableRepo)); }
             if (utility == null) { throw new ArgumentNullException(nameof(utility)); }
-
+            
             this.azureTableRepo = azureTableRepo;
             this.utility = utility;
+            this._userManager = userManager;
             authCloudTable = this.azureTableRepo.Collection["Auth"];
         }
 
         [HttpPost("Register")]
         [AllowAnonymous]
-        public async Task<IActionResult> RegisterAsync(RegisterDto registrationModel, CancellationToken cancellationToken)
+        public async Task<IActionResult> RegisterAsync(RegisterDto registrationModel, CancellationToken cancellationToken = new CancellationToken())
         {
             if (registrationModel == null) { throw new ArgumentNullException(nameof(registrationModel)); }
 
@@ -49,12 +53,12 @@ namespace GenericJwtAuth.Controllers
                 return BadRequest(ModelState);
             }
 
-            var existingUser = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.partitionKey, registrationModel.Email);
+            //var existingUser = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.PARTITIONKEY, registrationModel.Email);
 
-            if (existingUser != null)
-            {
-                return BadRequest($"User already exists with email {registrationModel.Email}");
-            }
+            //if (existingUser != null)
+            //{
+            //    return BadRequest($"User already exists with email {registrationModel.Email}");
+            //}
 
             AzureTableUser userToInsert = new AzureTableUser()
             {
@@ -62,8 +66,17 @@ namespace GenericJwtAuth.Controllers
                 UserName = registrationModel.Email,
                 PasswordHash = registrationModel.Password.ToMd5()
             };
-            await utility.InsertOrMergeEntityAsync<AzureTableUser>(userToInsert);
-            return Ok();
+
+            IdentityResult identityResult =await _userManager.CreateAsync(userToInsert, registrationModel.Password);
+            if (identityResult.Succeeded)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(identityResult.Errors);
+            }
+            //await utility.InsertOrMergeEntityAsync<AzureTableUser>(userToInsert);
 
         }
 
@@ -79,7 +92,12 @@ namespace GenericJwtAuth.Controllers
             {
                 /* write your logic to compare username and password to that in the database */
                 bool loginSuccess = false;
-                var userFromDb = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.partitionKey, userModel.UserName);
+                var userFromDb = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.PARTITIONKEY, userModel.NormalizedUserName);
+
+                if (userFromDb == null)
+                {
+                    throw new NullReferenceException($"User does not exist with username {userModel.UserName}");
+                }
 
                 loginSuccess = string.Equals(userModel.UserName, userFromDb.NormalizedUserName, StringComparison.InvariantCultureIgnoreCase)
                                 && userModel.Password.ToMd5() == userFromDb.PasswordHash;
@@ -103,13 +121,13 @@ namespace GenericJwtAuth.Controllers
                     return Unauthorized(userModel);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
         }
 
-        private Dictionary<string,string> ComposeTokenResponse(string token, AzureTableUser user)
+        private Dictionary<string, string> ComposeTokenResponse(string token, AzureTableUser user)
         {
             var dict = new Dictionary<string, string>();
             dict.Add("token", token);
@@ -128,35 +146,32 @@ namespace GenericJwtAuth.Controllers
 
             var roles = new[] { "Admin", "Manager", "Operator", "User" };
 
-            ClaimsIdentity claimsIdentity = new ClaimsIdentity(
-                new GenericIdentity(userModel.Email, "token"),
-                new List<Claim>() {
+            var claims = new List<Claim>() {
                     new Claim("UserId", userModel.Id.ToString()),
                     new Claim(ClaimTypes.Name, userModel.Name),
                     new Claim(ClaimTypes.Email, userModel.Email),
                     // add more claims here
-                }
-                );
+                };
 
-            claimsIdentity.AddClaims(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             JwtSecurityTokenHandler securityTokenHandler = new JwtSecurityTokenHandler();
 
-            SecurityToken securityToken = securityTokenHandler.CreateToken(new SecurityTokenDescriptor()
-            {
-                Issuer = JwtTokenConfigurations.Issuer,
-                Audience = JwtTokenConfigurations.Audience,
-                SigningCredentials = signingCredentials,
-                Subject = claimsIdentity,
-                Expires = JwtTokenConfigurations.ExpiresInMinutes,
-                NotBefore = JwtTokenConfigurations.NotBefore,
-            });
+            JwtSecurityToken jwtSecurityToken = new JwtSecurityToken(
+                issuer: JwtTokenConfigurations.Issuer,
+                audience: JwtTokenConfigurations.Audience,
+                claims: claims,
+                notBefore: JwtTokenConfigurations.NotBefore,
+                expires: JwtTokenConfigurations.ExpiresInMinutes,
+                signingCredentials: signingCredentials
+                );
 
-            return securityTokenHandler.WriteToken(securityToken);
+            return securityTokenHandler.WriteToken(jwtSecurityToken);
         }
 
-        [HttpGet("Restricted")]
-        [Authorize(Roles = "Admin, Manager, SomeBody")]
+        [Authorize]
+        [HttpPost("Restricted")]
+        //[Authorize(Roles = "Admin, Manager, SomeBody")]
         //[Authorize(Roles ="NoBody")] //uncommenting this means the user must also belong to role named NoBody
         public IActionResult Restricted()
         {

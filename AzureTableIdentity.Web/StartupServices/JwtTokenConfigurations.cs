@@ -1,8 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace GenericJwtAuth.StartupServices
 {
@@ -19,7 +16,7 @@ namespace GenericJwtAuth.StartupServices
 
         public static void Load(IConfiguration configuration)
         {
-            if (configuration ==null)
+            if (configuration == null)
             {
                 throw new ArgumentNullException(nameof(configuration));
             }
@@ -33,8 +30,8 @@ namespace GenericJwtAuth.StartupServices
                 Issuer = config.GetValue<string>("Issuer");
                 ValidateAudience = config.GetValue<bool>("ValidateAudience", true);
                 Audience = config.GetValue<string>("Audience");
-                ExpiresInMinutes = DateTime.Now.AddMinutes(config.GetValue<double>("ExpiresInMinutes", 60));
-                NotBefore = DateTime.Now.AddMinutes(config.GetValue<double>("NotBefore", 0));
+                ExpiresInMinutes = DateTime.Now.AddMinutes(config.GetValue<double>("ExpiresInMinutes", defaultValue: 60));
+                NotBefore = DateTime.Now.AddMinutes(config.GetValue<double>("NotBefore", defaultValue: 0));
 
             }
             catch (Exception)

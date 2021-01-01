@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericJwtAuth", "GenericJwtAuth.csproj", "{56AEFBC4-6374-4FA3-B0AC-9FA03547A8FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericJwtAuth.DTO", "GenericJwtAuth.DTO\GenericJwtAuth.DTO.csproj", "{6DDC2475-02BF-4960-803B-880A00D681CA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ED00A022-FC72-4FF8-BC4C-1DFAACEA3439}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-		Readme.md = Readme.md
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nivra.AzureOperations", "..\Nivra.AchievementsTimeline\Nivra.IdentityUsingAzureTable\Nivra.AzureOperations.csproj", "{CD66EE49-4167-449C-8F85-4AC08E35BB60}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nivra.AzureOperations", "..\..\Nivra.AchievementsTimeline\Nivra.IdentityUsingAzureTable\Nivra.AzureOperations.csproj", "{EBDF7CAA-5585-434C-B233-8F5BD2A2EFFE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericJwtAuth.Tests", "GenericJwtAuth.Tests\GenericJwtAuth.Tests.csproj", "{36182D92-D93F-4862-9BDA-C9C1DAC13D2F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureTableIdentity.Web", "AzureTableIdentity.Web\AzureTableIdentity.Web.csproj", "{FCD48427-D356-4CE9-B2DB-DD7E3505ACBE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureTableIdentity.Core", "AzureTableIdentity.Core\AzureTableIdentity.Core.csproj", "{4BCEDC07-4BFE-4C1E-9F20-BEDB8AF3226C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,19 +19,31 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{56AEFBC4-6374-4FA3-B0AC-9FA03547A8FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56AEFBC4-6374-4FA3-B0AC-9FA03547A8FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{56AEFBC4-6374-4FA3-B0AC-9FA03547A8FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56AEFBC4-6374-4FA3-B0AC-9FA03547A8FF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EBDF7CAA-5585-434C-B233-8F5BD2A2EFFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EBDF7CAA-5585-434C-B233-8F5BD2A2EFFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EBDF7CAA-5585-434C-B233-8F5BD2A2EFFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EBDF7CAA-5585-434C-B233-8F5BD2A2EFFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DDC2475-02BF-4960-803B-880A00D681CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DDC2475-02BF-4960-803B-880A00D681CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DDC2475-02BF-4960-803B-880A00D681CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DDC2475-02BF-4960-803B-880A00D681CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD66EE49-4167-449C-8F85-4AC08E35BB60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD66EE49-4167-449C-8F85-4AC08E35BB60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD66EE49-4167-449C-8F85-4AC08E35BB60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD66EE49-4167-449C-8F85-4AC08E35BB60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36182D92-D93F-4862-9BDA-C9C1DAC13D2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36182D92-D93F-4862-9BDA-C9C1DAC13D2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36182D92-D93F-4862-9BDA-C9C1DAC13D2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36182D92-D93F-4862-9BDA-C9C1DAC13D2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCD48427-D356-4CE9-B2DB-DD7E3505ACBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCD48427-D356-4CE9-B2DB-DD7E3505ACBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCD48427-D356-4CE9-B2DB-DD7E3505ACBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCD48427-D356-4CE9-B2DB-DD7E3505ACBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BCEDC07-4BFE-4C1E-9F20-BEDB8AF3226C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BCEDC07-4BFE-4C1E-9F20-BEDB8AF3226C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BCEDC07-4BFE-4C1E-9F20-BEDB8AF3226C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BCEDC07-4BFE-4C1E-9F20-BEDB8AF3226C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {E7B09755-B2A2-4403-B57B-7D6E64F23E34}
+		SolutionGuid = {60EAA24C-1F36-45E5-B713-DC5B6B5E8F3D}
 	EndGlobalSection
 EndGlobal
