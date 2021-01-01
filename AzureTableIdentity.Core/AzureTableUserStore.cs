@@ -91,7 +91,9 @@ namespace AzureTableIdentity
                  x.PartitionKey == "Users"
                  &&
                  x.NormalizedEmail == normalizedEmail);
-                fetchedUser = await query.FirstAsync(cancellationToken);
+                //fetchedUser = await query.FirstAsync(cancellationToken);
+                fetchedUser = query.FirstOrDefault();
+
             }
             catch (Exception ex)
             {
@@ -124,8 +126,8 @@ namespace AzureTableIdentity
                             x.PartitionKey == "Users"
                             &&
                             x.RowKey == normalizedUserName);
-                fetchedUser = await query.FirstOrDefaultAsync();
-                //fetchedUser = query.FirstOrDefault();
+                //fetchedUser = await query.FirstOrDefaultAsync();
+                fetchedUser = query.FirstOrDefault();
             }
             catch (Exception ex)
             {

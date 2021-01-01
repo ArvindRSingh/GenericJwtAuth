@@ -19,6 +19,9 @@ namespace GenericJwtAuth.Tests
     public class Tests
     {
         private readonly AccountController accountController;
+        private readonly string _email;
+        private readonly string _password;
+
         public Tests()
         {
             Startup.Initialize();
@@ -47,11 +50,16 @@ namespace GenericJwtAuth.Tests
                 );
 
             accountController = new Controllers.AccountController(Startup.AzureTableRepo, Startup.Utility, userManager);
+
+            // 
+            _email = Startup.Dict["Email"];
+            _password = Startup.Dict["Password"];
         }
 
         [SetUp]
         public void Setup()
         {
+
         }
 
         [Test]
@@ -59,8 +67,8 @@ namespace GenericJwtAuth.Tests
         {
             RegisterDto registerDto = new RegisterDto
             {
-                Email = Startup.Dict["Email"],
-                Password = Startup.Dict["Password"]
+                Email = _email,
+                Password = _password
             };
 
 
@@ -78,8 +86,8 @@ namespace GenericJwtAuth.Tests
         {
             LoginDto loginDto = new LoginDto
             {
-                UserName = Startup.Dict["Email"],
-                Password = Startup.Dict["Password"]
+                UserName = _email,
+                Password = _password
             };
 
             Microsoft.AspNetCore.Mvc.IActionResult result = accountController.LoginAsync(loginDto).Result;
@@ -88,7 +96,6 @@ namespace GenericJwtAuth.Tests
             Assert.IsTrue(result is OkObjectResult);
             Assert.IsTrue((result as OkObjectResult).StatusCode == 200);
 
-            Assert.Pass();
         }
 
         [Test]

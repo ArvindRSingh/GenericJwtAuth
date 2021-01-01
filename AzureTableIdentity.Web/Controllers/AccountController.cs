@@ -35,7 +35,7 @@ namespace GenericJwtAuth.Controllers
         {
             if (azureTableRepo == null) { throw new ArgumentNullException(nameof(azureTableRepo)); }
             if (utility == null) { throw new ArgumentNullException(nameof(utility)); }
-            
+
             this.azureTableRepo = azureTableRepo;
             this.utility = utility;
             this._userManager = userManager;
@@ -64,10 +64,9 @@ namespace GenericJwtAuth.Controllers
             {
                 Email = registrationModel.Email,
                 UserName = registrationModel.Email,
-                PasswordHash = registrationModel.Password.ToMd5()
             };
 
-            IdentityResult identityResult =await _userManager.CreateAsync(userToInsert, registrationModel.Password);
+            IdentityResult identityResult = await _userManager.CreateAsync(userToInsert, registrationModel.Password);
             if (identityResult.Succeeded)
             {
                 return Ok();
@@ -99,10 +98,10 @@ namespace GenericJwtAuth.Controllers
                     throw new NullReferenceException($"User does not exist with username {userModel.UserName}");
                 }
 
-                loginSuccess = string.Equals(userModel.UserName, userFromDb.NormalizedUserName, StringComparison.InvariantCultureIgnoreCase)
-                                && userModel.Password.ToMd5() == userFromDb.PasswordHash;
+                PasswordVerificationResult passwordVerificationResult = _userManager.PasswordHasher.VerifyHashedPassword(userFromDb, userFromDb.PasswordHash, userModel.Password);
 
-                if (loginSuccess)
+
+                if (passwordVerificationResult == PasswordVerificationResult.Success)
                 {
 
                     // fetch user from the database instead of using dummy user object below
