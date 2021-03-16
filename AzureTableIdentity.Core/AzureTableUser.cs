@@ -51,8 +51,6 @@ namespace AzureTableIdentity
                 base.RowKey = value;
             }
         }
-        public DateTimeOffset Timestamp { get; set; }
-        public string ETag { get; set; }
         private string _normalizedEmail;
         public string NormalizedEmail
         {
@@ -62,6 +60,7 @@ namespace AzureTableIdentity
         public bool PhoneNumberConfirmed { get; internal set; }
         public bool TwoFactorEnabled { get; internal set; }
         public string PhoneNumber { get; internal set; }
+
         public override void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
             base.ReadEntity(properties, operationContext);

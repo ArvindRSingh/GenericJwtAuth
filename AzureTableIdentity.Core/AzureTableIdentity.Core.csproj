@@ -1,18 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Providers\**" />
+    <EmbeddedResource Remove="Providers\**" />
+    <None Remove="Providers\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.1" />
+    <PackageReference Include="SendGrid" Version="9.22.0" />
     <PackageReference Include="UltraMapper" Version="0.2.51" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Nivra.AchievementsTimeline\Nivra.IdentityUsingAzureTable\Nivra.AzureOperations.csproj" />
     <ProjectReference Include="..\GenericJwtAuth.DTO\GenericJwtAuth.DTO.csproj" />
+    <ProjectReference Include="..\Nivra.Localization\Nivra.Localization.csproj" />
   </ItemGroup>
 
 </Project>

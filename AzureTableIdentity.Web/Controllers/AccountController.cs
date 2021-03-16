@@ -1,6 +1,7 @@
 ﻿using AzureTableIdentity;
 using GenericJwtAuth.CryptoService;
 using GenericJwtAuth.DTO;
+using GenericJwtAuth.Providers;
 using GenericJwtAuth.StartupServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,22 +24,28 @@ namespace GenericJwtAuth.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly UserManager<AzureTableUser> _userManager;
+        private readonly AzureTableUserManager _userManager;
         private IAzureTableRepo azureTableRepo;
-        private Nivra.AzureOperations.Utility utility;
+        private readonly Nivra.AzureOperations.Utility authUtility;
+        private readonly Nivra.AzureOperations.Utility userTokenUtility;
         private CloudTable authCloudTable;
 
         public AccountController(
             IAzureTableRepo azureTableRepo
-            , Nivra.AzureOperations.Utility utility
-            , UserManager<AzureTableUser> userManager)
+            , Nivra.AzureOperations.Utility authUtility
+            , Nivra.AzureOperations.Utility userTokenUtility
+            , AzureTableUserManager userManager)
         {
             if (azureTableRepo == null) { throw new ArgumentNullException(nameof(azureTableRepo)); }
-            if (utility == null) { throw new ArgumentNullException(nameof(utility)); }
+            if (authUtility == null) { throw new ArgumentNullException(nameof(authUtility)); }
 
             this.azureTableRepo = azureTableRepo;
-            this.utility = utility;
+            this.authUtility = authUtility;
+            this.userTokenUtility = userTokenUtility;
             this._userManager = userManager;
+            var userTwoFactorTokenProvider = new UserTwoFactorTokenProvider(this._userManager, userTokenUtility);
+            this._userManager.RegisterTokenProvider("Default", userTwoFactorTokenProvider);
+            this._userManager.RegisterTokenProvider("Authenticator", userTwoFactorTokenProvider);
             authCloudTable = this.azureTableRepo.Collection["Auth"];
         }
 
@@ -69,6 +76,8 @@ namespace GenericJwtAuth.Controllers
             IdentityResult identityResult = await _userManager.CreateAsync(userToInsert, registrationModel.Password);
             if (identityResult.Succeeded)
             {
+                var user = await _userManager.FindByNameAsync(userToInsert.UserName);
+
                 return Ok();
             }
             else
@@ -81,7 +90,7 @@ namespace GenericJwtAuth.Controllers
 
         [HttpPost("Login")]
         [AllowAnonymous]
-        public async Task<IActionResult> LoginAsync(LoginDto userModel)
+        public async Task<IActionResult> LoginAsync(LoginDto userModel, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (userModel == null)
             {
@@ -91,7 +100,8 @@ namespace GenericJwtAuth.Controllers
             {
                 /* write your logic to compare username and password to that in the database */
                 bool loginSuccess = false;
-                var userFromDb = utility.RetrieveEntityUsingPointQuery<AzureTableUser>(AzureTableUser.PARTITIONKEY, userModel.NormalizedUserName);
+                var userFromDb = await authUtility.RetrieveEntityUsingPointQueryAsync<AzureTableUser>(AzureTableUser.PARTITIONKEY, userModel.NormalizedUserName, cancellationToken)
+                    .ConfigureAwait(false);
 
                 if (userFromDb == null)
                 {
@@ -124,6 +134,33 @@ namespace GenericJwtAuth.Controllers
             {
                 throw;
             }
+        }
+
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            AzureTableUser user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound($"User with email {email} is not found");
+            }
+            string result = await _userManager.GeneratePasswordResetTokenAsync(user);
+            // send email
+
+
+            return Ok(result);
+        }
+
+        public async Task<IActionResult> ResetPassword(string email, string resetToken, string newPassword)
+        {
+            AzureTableUser user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound($"User with email {email} is not found");
+            }
+            await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+            // send email
+
+            return Ok();
         }
 
         private Dictionary<string, string> ComposeTokenResponse(string token, AzureTableUser user)

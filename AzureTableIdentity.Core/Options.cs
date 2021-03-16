@@ -6,7 +6,7 @@ using System.Text;
 
 namespace AzureTableIdentity.Core
 {
-    class Options : IOptions<IdentityOptions>
+    public class Options : IOptions<IdentityOptions>
     {
         public IdentityOptions Value => new IdentityOptions() { };
     }

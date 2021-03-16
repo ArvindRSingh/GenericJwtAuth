@@ -11,10 +11,10 @@ namespace AzureTableIdentity
     public class AzureTableRoleStore<TRole> : IRoleStore<TRole>
         where TRole : AzureTableRole, new()
     {
-        public CloudTable CloudTable { get; }
-        public AzureTableRoleStore(CloudTable cloudTable)
+        public CloudTable AuthCloudTable { get; }
+        public AzureTableRoleStore(CloudTable authCloudTable)
         {
-            this.CloudTable = cloudTable;
+            this.AuthCloudTable = authCloudTable;
         }
 
         public async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ namespace AzureTableIdentity
 
             try
             {
-                await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ namespace AzureTableIdentity
             TableOperation executeOperation = TableOperation.Delete(role);
             try
             {
-                TableResult result = await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                TableResult result = await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace AzureTableIdentity
 
             try
             {
-                IQueryable<TRole> query = CloudTable.CreateQuery<TRole>()
+                IQueryable<TRole> query = AuthCloudTable.CreateQuery<TRole>()
                             .Where(x => x.PartitionKey == "Users" && x.RowKey == normalizedRoleName);
                 fetchedRole = await query.FirstAsync(cancellationToken);
             }
@@ -155,7 +155,7 @@ namespace AzureTableIdentity
 
             try
             {
-                await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {

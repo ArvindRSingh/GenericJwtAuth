@@ -28,16 +28,17 @@ namespace GenericJwtAuth.Tests
                 AzureTableRepo.Collection.Add(table.Name, table);
             }
 
-            Utility = new Nivra.AzureOperations.Utility(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
+            AuthUtility = new Nivra.AzureOperations.Utility(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
+            UserTokenUtility = new Nivra.AzureOperations.Utility(Configuration["ConnectionStrings:DefaultConnection"], "UserTokens");
+            Dict.Add("Email", $"{Helper.GenerateRandomString(9, options: GenerateRandomStringOptions.IncludeAlphabets)}@{Helper.GenerateRandomString(5, GenerateRandomStringOptions.IncludeAlphabets)}.com");
 
-            Dict.Add("Email", $"{Helper.GenerateRandomString(9,options: GenerateRandomStringOptions.IncludeAlphabets)}@{Helper.GenerateRandomString(5, GenerateRandomStringOptions.IncludeAlphabets)}.com");
-
-            Dict.Add("Password", $"{Helper.GenerateRandomString(9,GenerateRandomStringOptions.CaseSensitive| GenerateRandomStringOptions.IncludeAlphabets | GenerateRandomStringOptions.IncludeDigits | GenerateRandomStringOptions.IncludeNonAlphaNumericCharacters)}");
+            Dict.Add("Password", $"{Helper.GenerateRandomString(9, GenerateRandomStringOptions.CaseSensitive | GenerateRandomStringOptions.IncludeAlphabets | GenerateRandomStringOptions.IncludeDigits | GenerateRandomStringOptions.IncludeNonAlphaNumericCharacters)}");
         }
 
         public static IConfiguration Configuration { get; private set; }
         public static IAzureTableRepo AzureTableRepo { get; set; } = new AzureTableRepo();
-        public static Utility Utility { get; private set; }
+        public static Utility AuthUtility { get; private set; }
+        public static Utility UserTokenUtility { get; private set; }
 
         // Holds all the state information to perform tests.
         public static Dictionary<string, string> Dict { get; set; } = new Dictionary<string, string>();

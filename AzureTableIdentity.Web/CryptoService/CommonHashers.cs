@@ -21,13 +21,13 @@ namespace GenericJwtAuth.CryptoService
             return GetStringFromHash(hash);
         }
 
-        public static string ToMd5(this string input)
-        {
-            using var md5 = MD5.Create();
-            var bytes = Encoding.ASCII.GetBytes(input);
-            var hash = md5.ComputeHash(bytes);
-            return GetStringFromHash(hash);
-        }
+        //public static string ToMd5(this string input)
+        //{
+        //    using var md5 = MD5.Create();
+        //    var bytes = Encoding.ASCII.GetBytes(input);
+        //    var hash = md5.ComputeHash(bytes);
+        //    return GetStringFromHash(hash);
+        //}
 
         private static string GetStringFromHash(byte[] hash)
         {

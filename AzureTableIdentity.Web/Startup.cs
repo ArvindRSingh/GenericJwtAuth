@@ -1,11 +1,17 @@
-﻿using GenericJwtAuth.StartupServices;
+﻿using AzureTableIdentity;
+using AzureTableIdentity.Core;
+using AzureTableIdentity.Web.StartupServices;
+using GenericJwtAuth.Providers;
+using GenericJwtAuth.StartupServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Nivra.Localization;
 
 namespace GenericJwtAuth
 {
@@ -14,6 +20,7 @@ namespace GenericJwtAuth
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            ConstantsInitializer.Initialize(Configuration);
         }
 
         public IConfiguration Configuration { get; }
@@ -21,6 +28,26 @@ namespace GenericJwtAuth
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddIdentityCore<AzureTableUser>(options =>
+                options.SignIn.RequireConfirmedAccount = true
+                )
+
+                //.AddTokenProvider<EmailConfirmationTokenProvider<AzureTableUser>>(TokenOptions.DefaultProvider)
+                .AddTokenProvider<PasswordResetTokenProvider<AzureTableUser>>(TokenOptions.DefaultProvider)
+                //.AddTokenProvider<ChangePhoneNumberTokenProvider<AzureTableUser>>(TokenOptions.DefaultProvider)
+                //.AddTokenProvider<EmailTokenProvider<AzureTableUser>>("ChangePhoneNumber")
+                .AddTokenProvider<UserTwoFactorTokenProvider>(TokenOptions.DefaultProvider)
+                //.AddTokenProvider<DataProtectorTokenProvider<AzureTableUser>>(TokenOptions.DefaultProvider)
+
+                .AddTokenProvider<AppEmailConfirmationTokenProvider<AzureTableUser>>("EmailConfirmationTokenProvider")
+                //.AddTokenProvider<PasswordResetTokenProvider<AzureTableUser>>("PasswordReset")
+                //.AddTokenProvider<ChangePhoneNumberTokenProvider<AzureTableUser>>("ChangePhoneNumber")
+                ////.AddTokenProvider<EmailTokenProvider<AzureTableUser>>("ChangePhoneNumber")
+                //.AddTokenProvider<UserTwoFactorTokenProvider>("TwoFactorTokenProvider")
+                // .AddTokenProvider<DataProtectorTokenProvider<AzureTableUser>>(TokenOptions.DefaultProvider)
+                .AddDefaultTokenProviders()
+                ;
+
 
             AzureTableRepo azureTableRepo = new AzureTableRepo();
             Nivra.AzureOperations.Utility utility = new Nivra.AzureOperations.Utility(Configuration["ConnectionStrings:DefaultConnection"], "Auth");
@@ -78,6 +105,12 @@ namespace GenericJwtAuth
             {
                 configuration.RootPath = "ClientApp/dist";
             });
+
+            services.AddTransient<IEmailSender, EmailSender>();
+            services.Configure<AuthMessageSenderOptions>(Configuration);
+
+            services.AddTransient(typeof(IUserTwoFactorTokenProvider<AzureTableUser>), typeof(UserTwoFactorTokenProvider));
+            services.AddSingleton(typeof(TextResourceManager));
         }
 
 

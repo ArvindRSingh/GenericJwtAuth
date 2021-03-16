@@ -10,13 +10,17 @@ using System.Threading.Tasks;
 namespace AzureTableIdentity
 {
     public class AzureTableUserStore<TUser> :
-        IUserStore<TUser>, IUserPasswordStore<TUser>, IUserEmailStore<TUser>, IUserPhoneNumberStore<TUser>,
-        IUserTwoFactorStore<TUser>
+        IUserStore<TUser>, IUserPasswordStore<TUser>, IUserEmailStore<TUser>, IUserPhoneNumberStore<TUser>
+        , IUserAuthenticationTokenStore<TUser>
+        //, IUserTwoFactorStore<TUser>
         where TUser : AzureTableUser, new()
     {
-        public AzureTableUserStore(CloudTable cloudTable)
+        private readonly Nivra.AzureOperations.Utility UserTokenUtility;
+
+        public AzureTableUserStore(CloudTable authCloudTable, Nivra.AzureOperations.Utility userTokenUtility)
         {
-            this.CloudTable = cloudTable;
+            this.AuthCloudTable = authCloudTable;
+            this.UserTokenUtility = userTokenUtility;
         }
 
         #region createuser
@@ -36,7 +40,7 @@ namespace AzureTableIdentity
 
             try
             {
-                await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -61,7 +65,7 @@ namespace AzureTableIdentity
             TableOperation executeOperation = TableOperation.Delete(user);
             try
             {
-                TableResult result = await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                TableResult result = await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -86,7 +90,7 @@ namespace AzureTableIdentity
 
             try
             {
-                IQueryable<TUser> query = CloudTable.CreateQuery<TUser>()
+                IQueryable<TUser> query = AuthCloudTable.CreateQuery<TUser>()
                  .Where(x =>
                  x.PartitionKey == "Users"
                  &&
@@ -121,7 +125,7 @@ namespace AzureTableIdentity
 
             try
             {
-                IQueryable<TUser> query = CloudTable.CreateQuery<TUser>()
+                IQueryable<TUser> query = AuthCloudTable.CreateQuery<TUser>()
                             .Where(x =>
                             x.PartitionKey == "Users"
                             &&
@@ -235,7 +239,7 @@ namespace AzureTableIdentity
             if (email == null) throw new ArgumentNullException(nameof(email));
 
             user.Email = email;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetEmailConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken)
@@ -244,7 +248,7 @@ namespace AzureTableIdentity
             if (user == null) throw new ArgumentNullException(nameof(user));
 
             user.EmailConfirmed = confirmed;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetNormalizedEmailAsync(TUser user, string normalizedEmail, CancellationToken cancellationToken)
@@ -254,7 +258,7 @@ namespace AzureTableIdentity
             if (normalizedEmail == null) throw new ArgumentNullException(nameof(normalizedEmail));
 
             user.NormalizedEmail = normalizedEmail;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetNormalizedUserNameAsync(TUser user, string normalizedName, CancellationToken cancellationToken)
@@ -264,7 +268,7 @@ namespace AzureTableIdentity
             if (normalizedName == null) throw new ArgumentNullException(nameof(normalizedName));
 
             user.NormalizedUserName = normalizedName;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetPasswordHashAsync(TUser user, string passwordHash, CancellationToken cancellationToken)
@@ -274,7 +278,7 @@ namespace AzureTableIdentity
             if (passwordHash == null) throw new ArgumentNullException(nameof(passwordHash));
 
             user.PasswordHash = passwordHash;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
 
         }
 
@@ -285,7 +289,7 @@ namespace AzureTableIdentity
             if (phoneNumber == null) throw new ArgumentNullException(nameof(phoneNumber));
 
             user.PasswordHash = phoneNumber;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken)
@@ -294,7 +298,7 @@ namespace AzureTableIdentity
             if (user == null) throw new ArgumentNullException(nameof(user));
 
             user.PhoneNumberConfirmed = confirmed;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetTwoFactorEnabledAsync(TUser user, bool enabled, CancellationToken cancellationToken)
@@ -303,7 +307,7 @@ namespace AzureTableIdentity
             if (user == null) throw new ArgumentNullException(nameof(user));
 
             user.TwoFactorEnabled = enabled;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public Task SetUserNameAsync(TUser user, string userName, CancellationToken cancellationToken)
@@ -313,7 +317,7 @@ namespace AzureTableIdentity
             if (userName == null) throw new ArgumentNullException(nameof(userName));
 
             user.UserName = userName;
-            return Task.FromResult<object>(null);
+            return Task.CompletedTask;
         }
 
         public async Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken)
@@ -328,7 +332,7 @@ namespace AzureTableIdentity
 
             try
             {
-                await CloudTable.ExecuteAsync(executeOperation, cancellationToken);
+                await AuthCloudTable.ExecuteAsync(executeOperation, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -340,7 +344,7 @@ namespace AzureTableIdentity
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
-        public CloudTable CloudTable { get; }
+        public CloudTable AuthCloudTable { get; }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -374,6 +378,65 @@ namespace AzureTableIdentity
             // GC.SuppressFinalize(this);
         }
         #endregion
+
+        #region IUserAuthenticationTokenStore
+        public async Task SetTokenAsync(TUser user, string loginProvider, string name, string value, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var tokenObject = new TokenEntity(user, value) { Provider = "" };
+            TableOperation executeOperation = TableOperation.InsertOrMerge(tokenObject);
+
+            try
+            {
+                await UserTokenUtility.Table.ExecuteAsync(executeOperation);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message, ex);
+            }
+        }
+
+        public async Task<string> GetTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            try
+            {
+                TableOperation executeOperation = TableOperation.Retrieve<TokenEntity>("UserTokens",user.UserName);
+                var userToken = await UserTokenUtility.Table.ExecuteAsync(executeOperation);
+                return "";// userToken.Result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message, ex);
+            }
+        }
+        public Task RemoveTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+
+    }
+
+    public class NivraAuthenticatorTokenProvider : AuthenticatorTokenProvider<AzureTableUser>
+    {
+        public override Task<bool> CanGenerateTwoFactorTokenAsync(UserManager<AzureTableUser> manager, AzureTableUser user)
+        {
+            return base.CanGenerateTwoFactorTokenAsync(manager, user);
+        }
+        public override Task<string> GenerateAsync(string purpose, UserManager<AzureTableUser> manager, AzureTableUser user)
+        {
+            return base.GenerateAsync(purpose, manager, user);
+        }
     }
 }
 

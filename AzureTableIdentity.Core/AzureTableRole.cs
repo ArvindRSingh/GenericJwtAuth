@@ -16,10 +16,7 @@ namespace AzureTableIdentity
 
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
-        public string PartitionKey { get => base.PartitionKey; set => throw new NotImplementedException(); }
-        public string RowKey { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
-        public string ETag { get; set; }
+        public new string PartitionKey { get => base.PartitionKey; set => throw new NotImplementedException(); }
         public string NormalizedName { get; internal set; }
 
         public override void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)

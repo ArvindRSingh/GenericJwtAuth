@@ -1,4 +1,5 @@
 using AzureTableIdentity;
+using AzureTableIdentity.Core;
 using GenericJwtAuth.Controllers;
 using GenericJwtAuth.DTO;
 using GenericJwtAuth.StartupServices;
@@ -21,6 +22,7 @@ namespace GenericJwtAuth.Tests
         private readonly AccountController accountController;
         private readonly string _email;
         private readonly string _password;
+        private string verificationCode;
 
         public Tests()
         {
@@ -29,16 +31,17 @@ namespace GenericJwtAuth.Tests
             IConfiguration configuration = Startup.GetIConfiguration(TestContext.CurrentContext.TestDirectory);
             JwtTokenConfigurations.Load(configuration);
 
-            var utility = new Utility(configuration.GetValue<string>("ConnectionStrings:DefaultConnection"), "Auth");
+            Utility authUtility = new Utility(configuration.GetValue<string>("ConnectionStrings:DefaultConnection"), "Auth");
+            Utility userTokenUtility = new Utility(configuration.GetValue<string>("ConnectionStrings:DefaultConnection"), "UserTokens");
 
-            AzureTableUserStore<AzureTableUser> azureTableUserStore = new AzureTableUserStore<AzureTableUser>(utility.Table);
+            AzureTableUserStore<AzureTableUser> azureTableUserStore = new AzureTableUserStore<AzureTableUser>(authUtility.Table, userTokenUtility);
             var loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
             });
 
-            UserManager<AzureTableUser> userManager = new UserManager<AzureTableUser>(
-                store: new AzureTableUserStore<AzureTableUser>(utility.Table),
+            AzureTableUserManager userManager = new AzureTableUserManager(
+                store: new AzureTableUserStore<AzureTableUser>(authUtility.Table, userTokenUtility),
                 optionsAccessor: new OptionsAccessor<IdentityOptions>(),
                 passwordHasher: new PasswordHasher<AzureTableUser>(),
                 userValidators: new List<IUserValidator<AzureTableUser>>() { new UserValidator<AzureTableUser>() },
@@ -46,10 +49,13 @@ namespace GenericJwtAuth.Tests
                 keyNormalizer: new LookupNormalizer(),
                 errors: new IdentityErrorDescriber(),
                 services: null,
-                logger: loggerFactory.CreateLogger<UserManager<AzureTableUser>>()
+                logger: loggerFactory.CreateLogger<UserManager<AzureTableUser>>(),
+                textResourceManager: new Nivra.Localization.TextResourceManager(),
+                emailSender: new EmailSender(new AuthMessageSenderOptions() { SendGridKey = "", SendGridUser = "" }),
+                userTokenUtility: userTokenUtility
                 );
 
-            accountController = new Controllers.AccountController(Startup.AzureTableRepo, Startup.Utility, userManager);
+            accountController = new Controllers.AccountController(Startup.AzureTableRepo, Startup.AuthUtility, Startup.UserTokenUtility, userManager);
 
             // 
             _email = Startup.Dict["Email"];
@@ -99,25 +105,33 @@ namespace GenericJwtAuth.Tests
         }
 
         [Test]
-        public void Test03ChangePassword()
+        public void Test03ForgotPassword()
+        {
+
+            Microsoft.AspNetCore.Mvc.IActionResult result = accountController.ForgotPassword(_email).Result;
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result is OkObjectResult);
+            Assert.IsTrue((result as OkObjectResult).StatusCode == 200);
+            this.verificationCode = ((Microsoft.AspNetCore.Mvc.ObjectResult)result).Value.ToString();
+        }
+
+        [Test]
+        public void Test04ResetPassword()
+        {
+            Microsoft.AspNetCore.Mvc.IActionResult result = accountController.ResetPassword(_email, verificationCode, _password).Result;
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result is OkObjectResult || result is OkResult);
+            Assert.IsTrue((result as OkObjectResult)?.StatusCode == 200 || (result as OkResult).StatusCode == 200);
+        }
+
+        [Test]
+        public void Test05ChangeEmail()
         {
 
         }
 
         [Test]
-        public void Test04ForgotPassword()
-        {
-
-        }
-
-        [Test]
-        public void Test04ChangeEmail()
-        {
-
-        }
-
-        [Test]
-        public void Test05ChangeUserName()
+        public void Test06ChangeUserName()
         {
 
         }
